@@ -1,15 +1,146 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Schema do Customer Support Chatbot E-commerce
+// Sistema de atendimento ao cliente com IA (Google Gemini)
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ============================================
+// CUSTOMERS - Clientes do E-commerce
+// ============================================
+
+model Customer {
+  id        String   @id @default(uuid()) @db.Uuid
+  firstName String   @map("first_name") @db.VarChar(100)
+  lastName  String   @map("last_name") @db.VarChar(100)
+  email     String   @unique @db.VarChar(255)
+  phone     String?  @db.VarChar(20)
+  cpf       String?  @unique @db.VarChar(14)
+  birthDate DateTime? @map("birth_date") @db.Date
+
+  // Endereço em JSONB para flexibilidade
+  address   Json?    @db.JsonB
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  // Relações
+  purchases      Purchase[]
+  conversations  Conversation[]
+
+  @@index([email])
+  @@index([cpf])
+  @@index([createdAt])
+  @@map("customers")
+}
+
+// ============================================
+// PURCHASES - Compras dos Clientes
+// ============================================
+
+model Purchase {
+  id            Int      @id @default(autoincrement())
+  customerId    String   @map("customer_id") @db.Uuid
+  orderNumber   String   @unique @map("order_number") @db.VarChar(50)
+  productName   String   @map("product_name") @db.VarChar(255)
+  productCategory String? @map("product_category") @db.VarChar(100)
+  quantity      Int      @default(1)
+  unitPrice     Decimal  @map("unit_price") @db.Decimal(10, 2)
+  totalPrice    Decimal  @map("total_price") @db.Decimal(10, 2)
+  status        PurchaseStatus @default(COMPLETED)
+  purchaseDate  DateTime @default(now()) @map("purchase_date") @db.Timestamp(6)
+  deliveryDate  DateTime? @map("delivery_date") @db.Timestamp(6)
+  notes         String?  @db.Text
+
+  // Timestamps
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relação
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([orderNumber])
+  @@index([purchaseDate(sort: Desc)])
+  @@index([status])
+  @@map("purchases")
+}
+
+enum PurchaseStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  COMPLETED
+
+  @@map("purchase_status")
+}
+
+// ============================================
+// CONVERSATIONS - Conversas do Chat
+// ============================================
+
+model Conversation {
+  id         String             @id @default(uuid()) @db.Uuid
+  customerId String             @map("customer_id") @db.Uuid
+  title      String?            @db.VarChar(255)
+  status     ConversationStatus @default(ACTIVE)
+
+  // Timestamps
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime           @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  // Relações
+  customer   Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  messages   Message[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("conversations")
+}
+
+enum ConversationStatus {
+  ACTIVE
+  RESOLVED
+  ARCHIVED
+
+  @@map("conversation_status")
+}
+
+// ============================================
+// MESSAGES - Mensagens do Chat
+// ============================================
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId String       @map("conversation_id") @db.Uuid
+  role           MessageRole
+  content        String       @db.Text
+
+  // Metadata para informações adicionais (tokens, tempo de resposta, etc)
+  metadata       Json?        @db.JsonB
+
+  // Timestamps
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relação
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt(sort: Desc)])
+  @@map("messages")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+
+  @@map("message_role")
 }

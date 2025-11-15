@@ -3,13 +3,20 @@
   "version": "1.0.0",
   "description": "Backend API para sistema de atendimento ao cliente com IA",
   "type": "module",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsup src/server.ts --format esm --minify",
     "start": "node dist/server.js",
-    "db:setup": "tsx scripts/setup-database.ts",
-    "db:seed": "tsx scripts/run-seeds.ts",
-    "db:reset": "tsx scripts/setup-database.ts && tsx scripts/run-seeds.ts",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f postgres",
     "check": "biome check --write .",
     "check:ci": "biome ci ."
   },
