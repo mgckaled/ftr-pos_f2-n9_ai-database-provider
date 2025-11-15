@@ -3,3 +3,18 @@
 
 # personal files
 notes.md
+
+# node modules
+node_modules/
+.pnp.cjs
+.pnp.loader.mjs
+.pnp.js
+.yarn/*
+!.yarn/patches
+
+# dotenv environment variables file
+.env
+.env.local
+.env.*.local
+.env.test.local
+.env.production.local

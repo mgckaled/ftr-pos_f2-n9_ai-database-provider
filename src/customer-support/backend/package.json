@@ -1,0 +1,49 @@
+{
+  "name": "@customer-support/backend",
+  "version": "1.0.0",
+  "description": "Backend API para sistema de atendimento ao cliente com IA",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsup src/server.ts --format esm --minify",
+    "start": "node dist/server.js",
+    "db:setup": "tsx scripts/setup-database.ts",
+    "db:seed": "tsx scripts/run-seeds.ts",
+    "db:reset": "tsx scripts/setup-database.ts && tsx scripts/run-seeds.ts",
+    "check": "biome check --write .",
+    "check:ci": "biome ci ."
+  },
+  "keywords": [
+    "chatbot",
+    "customer-support",
+    "ai",
+    "gemini",
+    "fastify",
+    "postgres"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/sensible": "^6.0.3",
+    "@fastify/swagger": "^9.6.0",
+    "@fastify/swagger-ui": "^5.2.3",
+    "@google/genai": "^1.29.1",
+    "@prisma/client": "^6.19.0",
+    "@scalar/fastify-api-reference": "^1.35.6",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.6.2",
+    "pg": "^8.16.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.5",
+    "@faker-js/faker": "^9.9.0",
+    "@types/node": "^22.17.2",
+    "@types/pg": "^8.15.6",
+    "prisma": "^6.19.0",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
