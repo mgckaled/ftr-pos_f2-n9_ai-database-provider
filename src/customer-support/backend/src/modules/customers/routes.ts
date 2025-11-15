@@ -8,6 +8,7 @@ import {
   CustomerIdParamSchema,
   CustomerSchema,
 } from './schemas/customer.schema.js'
+import { PurchaseSchema } from '../purchases/schemas/purchase.schema.js'
 import {
   sendSuccess,
   sendPaginated,
@@ -82,7 +83,7 @@ const customersRoutes: FastifyPluginAsyncZod = async (fastify) => {
       response: {
         200: z.object({
           success: z.literal(true),
-          data: z.array(z.any()), // Purchase schema será definido depois
+          data: z.array(PurchaseSchema),
           timestamp: z.string(),
         }),
       },

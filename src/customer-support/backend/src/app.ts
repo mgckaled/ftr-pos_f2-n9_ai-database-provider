@@ -1,18 +1,21 @@
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
 import swagger from '@fastify/swagger'
 import scalar from '@scalar/fastify-api-reference'
+import fastify from 'fastify'
+import {
+  jsonSchemaTransform,
+  validatorCompiler
+} from 'fastify-type-provider-zod'
 
 // Plugins
-import prismaPlugin from './plugins/prisma.plugin.js'
 import corsPlugin from './plugins/cors.plugin.js'
-import zodPlugin from './plugins/zod.plugin.js'
 import errorHandlerPlugin from './plugins/error-handler.plugin.js'
+import prismaPlugin from './plugins/prisma.plugin.js'
+import zodPlugin from './plugins/zod.plugin.js'
 
 // Routes
+import chatRoutes from './modules/chat/routes.js'
 import customersRoutes from './modules/customers/routes.js'
 import purchasesRoutes from './modules/purchases/routes.js'
-import chatRoutes from './modules/chat/routes.js'
 
 /**
  * Cria e configura a aplicação Fastify
@@ -30,11 +33,10 @@ export async function buildApp() {
     },
   })
 
-  // Registra Zod type provider
+  // Registra Zod type provider (validatorCompiler configurado aqui, serializerCompiler no zodPlugin)
   app.setValidatorCompiler(validatorCompiler)
-  app.setSerializerCompiler(serializerCompiler)
 
-  // Registra Swagger para gerar OpenAPI schema
+  // Registra Swagger para gerar OpenAPI schema com transformação Zod
   await app.register(swagger, {
     openapi: {
       info: {
@@ -54,6 +56,7 @@ export async function buildApp() {
         { name: 'chat', description: 'Endpoints de chat com IA' },
       ],
     },
+    transform: jsonSchemaTransform, // Converte schemas Zod para JSON Schema corretamente
   })
 
   // Registra plugins

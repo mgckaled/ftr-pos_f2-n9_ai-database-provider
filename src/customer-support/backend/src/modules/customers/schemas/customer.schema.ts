@@ -26,13 +26,7 @@ export const CustomerSchema = z.object({
   firstName: z.string().min(2).max(100),
   lastName: z.string().min(2).max(100),
   email: z.string().email().max(255),
-  phone: z
-    .string()
-    .min(10)
-    .max(20)
-    .regex(/^\d+$/, 'Telefone deve conter apenas números')
-    .nullable()
-    .optional(),
+  phone: z.string().min(10).max(20).nullable().optional(),
   cpf: z
     .string()
     .length(11, 'CPF deve ter 11 dígitos')

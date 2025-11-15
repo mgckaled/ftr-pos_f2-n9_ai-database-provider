@@ -8,6 +8,7 @@ export const PurchaseStatusSchema = z.nativeEnum(PurchaseStatus)
 
 /**
  * Schema completo de Purchase (do banco)
+ * Usa z.any() com transform para lidar com Prisma.Decimal
  */
 export const PurchaseSchema = z.object({
   id: z.number().int().positive(),
@@ -16,8 +17,12 @@ export const PurchaseSchema = z.object({
   productName: z.string().min(3).max(255),
   productCategory: z.string().min(2).max(100).nullable().optional(),
   quantity: z.number().int().positive(),
-  unitPrice: z.number().positive(),
-  totalPrice: z.number().positive(),
+  unitPrice: z.any().transform((val) =>
+    typeof val === 'object' && 'toNumber' in val ? val.toNumber() : Number(val)
+  ),
+  totalPrice: z.any().transform((val) =>
+    typeof val === 'object' && 'toNumber' in val ? val.toNumber() : Number(val)
+  ),
   status: PurchaseStatusSchema,
   purchaseDate: z.coerce.date(),
   deliveryDate: z.coerce.date().nullable().optional(),

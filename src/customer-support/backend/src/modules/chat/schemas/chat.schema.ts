@@ -15,7 +15,7 @@ export const MessageSchema = z.object({
   conversationId: z.string().uuid(),
   role: MessageRoleSchema,
   content: z.string().min(1).max(10000),
-  metadata: z.record(z.unknown()).nullable().optional(),
+  metadata: z.record(z.string(), z.string()).nullable().optional(),
   createdAt: z.coerce.date(),
 })
 
@@ -50,7 +50,7 @@ export const CreateMessageSchema = z.object({
     .string()
     .min(1, 'A mensagem não pode estar vazia')
     .max(10000, 'Mensagem muito longa (máximo 10.000 caracteres)'),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
 })
 
 /**
