@@ -16,6 +16,9 @@ async function start() {
     console.log(`
 🚀 Servidor rodando em http://localhost:${env.PORT}
 
+📚 Documentação da API (Scalar):
+   👉 http://localhost:${env.PORT}/docs
+
 📍 Endpoints disponíveis:
    - GET  /health
    - GET  /customers
