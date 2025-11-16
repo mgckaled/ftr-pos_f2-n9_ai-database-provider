@@ -4,12 +4,12 @@ import type { PrismaClient, Conversation, Prisma } from '@prisma/client'
  * Repository para operações de banco de dados relacionadas a Conversations
  */
 export class ConversationsRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
   /**
    * Busca conversation por ID
    */
-  async findById(id: string): Promise<Conversation | null> {
+  async findById (id: string): Promise<Conversation | null> {
     return this.prisma.conversation.findUnique({
       where: { id },
     })
@@ -18,7 +18,7 @@ export class ConversationsRepository {
   /**
    * Busca conversation por ID com mensagens incluídas
    */
-  async findByIdWithMessages(id: string, limit = 20) {
+  async findByIdWithMessages (id: string, limit = 20) {
     return this.prisma.conversation.findUnique({
       where: { id },
       include: {
@@ -41,7 +41,7 @@ export class ConversationsRepository {
   /**
    * Lista conversations de um customer
    */
-  async findByCustomerId(
+  async findByCustomerId (
     customerId: string,
     args?: { skip?: number; take?: number }
   ) {
@@ -52,8 +52,8 @@ export class ConversationsRepository {
       take: args?.take,
       include: {
         messages: {
-          orderBy: { createdAt: 'desc' },
-          take: 1, // Última mensagem apenas
+          orderBy: { createdAt: 'asc' }, // Ordem cronológica (mais antigas primeiro)
+          // Retorna TODAS as mensagens, não apenas a última
         },
       },
     })
@@ -62,7 +62,7 @@ export class ConversationsRepository {
   /**
    * Busca conversation ativa de um customer
    */
-  async findActiveByCustomerId(customerId: string) {
+  async findActiveByCustomerId (customerId: string) {
     return this.prisma.conversation.findFirst({
       where: {
         customerId,
@@ -75,7 +75,7 @@ export class ConversationsRepository {
   /**
    * Cria nova conversation
    */
-  async create(data: Prisma.ConversationCreateInput): Promise<Conversation> {
+  async create (data: Prisma.ConversationCreateInput): Promise<Conversation> {
     return this.prisma.conversation.create({
       data,
     })
@@ -84,7 +84,7 @@ export class ConversationsRepository {
   /**
    * Atualiza conversation
    */
-  async update(
+  async update (
     id: string,
     data: Prisma.ConversationUpdateInput
   ): Promise<Conversation> {
@@ -97,7 +97,7 @@ export class ConversationsRepository {
   /**
    * Atualiza o updatedAt de uma conversation (útil ao adicionar mensagens)
    */
-  async touch(id: string): Promise<Conversation> {
+  async touch (id: string): Promise<Conversation> {
     return this.prisma.conversation.update({
       where: { id },
       data: {
@@ -109,7 +109,7 @@ export class ConversationsRepository {
   /**
    * Conta total de conversations de um customer
    */
-  async countByCustomerId(customerId: string): Promise<number> {
+  async countByCustomerId (customerId: string): Promise<number> {
     return this.prisma.conversation.count({
       where: { customerId },
     })
@@ -118,7 +118,7 @@ export class ConversationsRepository {
   /**
    * Deleta conversation (cascade deleta messages também)
    */
-  async delete(id: string): Promise<Conversation> {
+  async delete (id: string): Promise<Conversation> {
     return this.prisma.conversation.delete({
       where: { id },
     })

@@ -74,23 +74,23 @@ Sua única função é fornecer suporte ao cliente relacionado ao e-commerce. Ma
 /**
  * Template para injetar contexto do cliente na conversa
  */
-export function buildCustomerContextPrompt(context: {
-  customerName: string
-  customerEmail: string
-  recentPurchases: Array<{
-    orderId: number
-    orderNumber: string
-    productName: string
-    quantity: number
-    totalPrice: string
-    status: string
-    purchaseDate: string
-    deliveryDate: string | null
-  }>
+export function buildCustomerContextPrompt (context: {
+   customerName: string
+   customerEmail: string
+   recentPurchases: Array<{
+      orderId: number
+      orderNumber: string
+      productName: string
+      quantity: number
+      totalPrice: string
+      status: string
+      purchaseDate: string
+      deliveryDate: string | null
+   }>
 }): string {
-  const purchasesContext = context.recentPurchases
-    .map(
-      (purchase, index) => `
+   const purchasesContext = context.recentPurchases
+      .map(
+         (purchase, index) => `
 ${index + 1}. Pedido #${purchase.orderNumber}
    - Produto: ${purchase.productName}
    - Quantidade: ${purchase.quantity}
@@ -99,10 +99,10 @@ ${index + 1}. Pedido #${purchase.orderNumber}
    - Data da Compra: ${purchase.purchaseDate}
    ${purchase.deliveryDate ? `- Data de Entrega: ${purchase.deliveryDate}` : ''}
 `.trim()
-    )
-    .join('\n\n')
+      )
+      .join('\n\n')
 
-  return `
+   return `
 ## CONTEXTO DO CLIENTE
 
 **Nome**: ${context.customerName}

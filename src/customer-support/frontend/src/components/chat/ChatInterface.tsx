@@ -2,7 +2,7 @@
  * Interface principal do chat
  */
 
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { MessageList } from './MessageList'
 import { MessageInput } from './MessageInput'
 import { useChatHistory, useSendMessage } from '@/hooks/useChat'
@@ -18,7 +18,7 @@ export function ChatInterface({ customerId }: ChatInterfaceProps) {
   const { data: historyData, isLoading: isLoadingHistory } = useChatHistory(customerId)
 
   // Memória local
-  const { messages: localMessages, addMessage, saveMessages } = useChatMemory(customerId)
+  const { messages: localMessages, addMessage } = useChatMemory(customerId)
 
   // Mutation para enviar mensagem
   const { mutate: sendMessage, isPending } = useSendMessage()
@@ -42,13 +42,6 @@ export function ChatInterface({ customerId }: ChatInterfaceProps) {
       (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
     )
   }, [historyData, localMessages])
-
-  // Sincroniza mensagens locais quando histórico é carregado
-  useEffect(() => {
-    if (historyData && historyData.length > 0) {
-      saveMessages(historyData)
-    }
-  }, [historyData, saveMessages])
 
   const handleSendMessage = (content: string) => {
     // Cria mensagem do usuário

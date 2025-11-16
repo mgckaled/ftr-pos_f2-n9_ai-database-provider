@@ -17,25 +17,55 @@ export function useChatHistory(customerId: string | null) {
     queryFn: async () => {
       if (!customerId) return null
 
-      const response = await api.get<ChatHistoryResponse>(
-        `/chat/conversations/${customerId}`,
-      )
+      const response = await api.get<{
+        success: boolean
+        data: Array<{
+          id: string
+          customerId: string
+          status: string
+          createdAt: string
+          updatedAt: string
+          messages: Array<{
+            id: number
+            conversationId: string
+            role: 'USER' | 'ASSISTANT'
+            content: string
+            metadata: Record<string, string> | null
+            createdAt: string
+          }>
+        }>
+        pagination: {
+          page: number
+          limit: number
+          total: number
+          totalPages: number
+        }
+      }>(`/chat/conversations/${customerId}`, {
+        params: { page: 1, limit: 100 }, // Busca até 100 conversas
+      })
 
       if (!response.data.success || !response.data.data) {
         return []
       }
 
-      // Converte para formato Message[]
-      const messages: Message[] = response.data.data.conversations.map(
-        (conv, index) => ({
-          id: `${customerId}-${index}`,
-          role: conv.role,
-          content: conv.content,
-          timestamp: new Date(conv.timestamp),
-        }),
-      )
+      // Extrai todas as mensagens de todas as conversações
+      const allMessages: Message[] = []
 
-      return messages
+      response.data.data.forEach((conversation) => {
+        conversation.messages.forEach((msg) => {
+          allMessages.push({
+            id: `msg-${msg.id}`,
+            role: msg.role === 'USER' ? 'user' : 'assistant',
+            content: msg.content,
+            timestamp: new Date(msg.createdAt),
+          })
+        })
+      })
+
+      // Ordena por timestamp (mais antigas primeiro)
+      return allMessages.sort(
+        (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+      )
     },
     enabled: !!customerId,
     staleTime: 1000 * 60, // 1 minuto
