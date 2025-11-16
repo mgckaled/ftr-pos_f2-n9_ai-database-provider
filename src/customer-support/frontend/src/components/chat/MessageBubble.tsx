@@ -2,7 +2,7 @@
  * Componente de bolha de mensagem individual
  */
 
-import { format } from 'date-fns'
+import { format, isValid } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Bot, User } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -15,6 +15,19 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isAssistant = message.role === 'assistant'
+
+  // Garante que timestamp seja um objeto Date válido
+  const getValidTimestamp = () => {
+    if (!message.timestamp) return new Date()
+
+    const date = message.timestamp instanceof Date
+      ? message.timestamp
+      : new Date(message.timestamp)
+
+    return isValid(date) ? date : new Date()
+  }
+
+  const timestamp = getValidTimestamp()
 
   return (
     <div
@@ -56,7 +69,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
         {/* Timestamp */}
         <time className="px-1 text-xs text-muted-foreground">
-          {format(message.timestamp, "HH:mm 'de' dd/MM/yyyy", { locale: ptBR })}
+          {format(timestamp, "HH:mm 'de' dd/MM/yyyy", { locale: ptBR })}
         </time>
       </div>
     </div>

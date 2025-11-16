@@ -25,11 +25,25 @@ export interface ChatSendRequest {
 export interface ChatSendResponse {
   success: boolean
   data?: {
-    customerId: string
-    userMessage: string
-    aiResponse: string
-    timestamp: string
+    conversationId: string
+    userMessage: {
+      id: number
+      conversationId: string
+      role: 'USER'
+      content: string
+      metadata: Record<string, string> | null
+      createdAt: string
+    }
+    assistantMessage: {
+      id: number
+      conversationId: string
+      role: 'ASSISTANT'
+      content: string
+      metadata: Record<string, string> | null
+      createdAt: string
+    }
   }
+  timestamp: string
   error?: {
     code: string
     message: string

@@ -114,9 +114,10 @@ export class GeminiService {
         parts: [{ text: msg.content }],
       }))
 
-      // Cria chat session
-      const chat = this.client.models.chat({
-        model: 'gemini-2.0-flash-lite', // Melhor modelo para free tier (30 RPM)
+      // Cria chat session com histórico
+      const chat = this.client.chats.create({
+        model: env.GEMINI_MODEL,
+        history, // Histórico passado diretamente no create
         config: {
           systemInstruction: fullSystemInstruction,
           temperature: 0.3, // Baixa para respostas consistentes
@@ -144,14 +145,11 @@ export class GeminiService {
         },
       })
 
-      // Inicia chat com histórico
-      const session = chat.startChat({
-        history,
-      })
-
       // Envia mensagem e recebe resposta
-      const result = await session.sendMessage(userMessage)
-      const response = result.text()
+      const result = await chat.sendMessage({
+        message: userMessage,
+      })
+      const response = result.text
 
       if (!response) {
         throw new Error('Gemini retornou resposta vazia')
