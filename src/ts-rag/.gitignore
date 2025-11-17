@@ -1,0 +1,33 @@
+# Dependencies
+backend/node_modules/
+backend/.pnpm-store/
+
+# Environment
+backend/.env
+backend/.env.local
+
+# Build
+backend/dist/
+backend/*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MongoDB data (if running locally)
+data/mongodb/
+
+# PDF source (large file - opcional excluir)
+# data/*.pdf
