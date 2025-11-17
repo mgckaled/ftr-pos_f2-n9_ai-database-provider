@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "process-pdf": "tsx scripts/process-pdf.ts",
+    "validate-embeddings": "tsx scripts/validate-embeddings.ts",
     "test:retrieval": "tsx scripts/test-retrieval.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -35,7 +36,7 @@
     "fastify-type-provider-zod": "^6.1.0",
     "lru-cache": "^11.2.2",
     "mongodb": "^7.0.0",
-    "pdf-parse": "1.1.1",
+    "pdf-parse": "1.1.4",
     "zod": "^4.1.12"
   },
   "devDependencies": {
