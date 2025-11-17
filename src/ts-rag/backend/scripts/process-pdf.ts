@@ -17,7 +17,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pdfParse from 'pdf-parse'
-import { processChunkMetadata } from '../src/shared/utils/chunk-classifier.js'
+import { processChunkMetadata, resetContext } from '../src/shared/utils/chunk-classifier.js'
 import { RateLimiter } from '../src/shared/utils/rate-limiter.js'
 
 // Load environment variables
@@ -67,6 +67,10 @@ async function createChunks(text: string) {
 
   console.log(`✅ ${docs.length} chunks criados`)
   console.log(`   - Tamanho médio: ${Math.round(text.length / docs.length)} chars`)
+
+  // Reseta contexto antes de processar (importante para context propagation)
+  console.log(`\n🔄 Resetando contexto do Chunk Classifier V2...`)
+  resetContext()
 
   // Adiciona metadata a cada chunk
   const chunksWithMetadata = docs.map((doc, index) => {

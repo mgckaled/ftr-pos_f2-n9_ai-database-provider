@@ -8,7 +8,7 @@ import {
   processChunkMetadata,
   resetContext,
   getContextStats,
-} from '../src/shared/utils/chunk-classifier-v2.js'
+} from '../src/shared/utils/chunk-classifier.js'
 
 async function updateMetadata() {
   console.log(`\n${'='.repeat(60)}`)
@@ -43,14 +43,22 @@ async function updateMetadata() {
     let updated = 0
     let unknownBefore = 0
     let unknownAfter = 0
+    let sectionsBeforeCount = 0
+    let sectionsAfterCount = 0
 
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
       const oldChapter = chunk.metadata.chapter
+      const oldSection = chunk.metadata.section
 
       // Conta "Unknown Chapter" antes
       if (oldChapter === 'Unknown Chapter') {
         unknownBefore++
+      }
+
+      // Conta sections antes
+      if (oldSection && oldSection.trim() !== '') {
+        sectionsBeforeCount++
       }
 
       // Re-processa metadata
@@ -65,10 +73,15 @@ async function updateMetadata() {
         unknownAfter++
       }
 
+      // Conta sections depois
+      if (newMetadata.section && newMetadata.section.trim() !== '') {
+        sectionsAfterCount++
+      }
+
       // Verifica se houve mudança
       const hasChanged =
         oldChapter !== newMetadata.chapter ||
-        chunk.metadata.section !== newMetadata.section
+        oldSection !== newMetadata.section
 
       if (hasChanged) {
         // Atualiza no MongoDB
@@ -116,12 +129,27 @@ async function updateMetadata() {
       console.log(`   ℹ️  Nenhuma mudança em "Unknown Chapter"`)
     }
 
+    // Estatísticas de sections
+    console.log(`\n   Chunks com Section ANTES: ${sectionsBeforeCount} (${((sectionsBeforeCount / chunks.length) * 100).toFixed(1)}%)`)
+    console.log(`   Chunks com Section DEPOIS: ${sectionsAfterCount} (${((sectionsAfterCount / chunks.length) * 100).toFixed(1)}%)`)
+
+    const sectionImprovement = sectionsAfterCount - sectionsBeforeCount
+    if (sectionImprovement > 0) {
+      console.log(`   ✅ Melhoria: ${sectionImprovement} chunks agora têm section identificada!`)
+    } else if (sectionImprovement < 0) {
+      console.log(`   ⚠️  ${Math.abs(sectionImprovement)} chunks perderam section`)
+    } else {
+      console.log(`   ℹ️  Nenhuma mudança em sections`)
+    }
+
     // 5. Context stats
     console.log(`\n${'─'.repeat(60)}`)
     console.log(`📖 Estatísticas do Context:\n`)
     const contextStats = getContextStats()
     console.log(`   Último capítulo conhecido: ${contextStats.lastKnownChapter}`)
+    console.log(`   Última section conhecida: ${contextStats.lastKnownSection}`)
     console.log(`   Capítulos detectados: ${contextStats.chaptersDetected}`)
+    console.log(`   Sections detectadas: ${contextStats.sectionsDetected}`)
 
     if (contextStats.pageRanges.length > 0) {
       console.log(`\n   Capítulos por página:`)

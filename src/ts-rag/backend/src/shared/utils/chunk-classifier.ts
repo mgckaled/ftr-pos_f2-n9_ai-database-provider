@@ -1,6 +1,6 @@
 /**
- * Classifica chunks do PDF por tipo de conteúdo
- * Usa heurísticas simples para detectar code, explanation, example, reference
+ * Chunk Classifier V2 - Versão melhorada com context propagation
+ * Reduz "Unknown Chapter" através de técnicas avançadas de extração
  */
 
 export type ChunkType = 'code' | 'explanation' | 'example' | 'reference'
@@ -14,15 +14,22 @@ export interface ChunkMetadata {
 }
 
 /**
+ * Context compartilhado entre chunks para propagação
+ */
+let lastKnownChapter: string | null = null
+let lastKnownSection: string | null = null
+let chaptersByPageRange: Map<number, string> = new Map()
+let sectionsByPageRange: Map<number, string> = new Map()
+
+/**
  * Classifica o tipo de conteúdo do chunk
  */
 export function classifyChunkType(content: string): ChunkType {
   const lowerContent = content.toLowerCase()
 
   // Heurística 1: Código
-  // Procura por padrões comuns de código TypeScript
   const codePatterns = [
-    /```/g, // Markdown code blocks
+    /```/g,
     /function\s+\w+/g,
     /class\s+\w+/g,
     /interface\s+\w+/g,
@@ -43,7 +50,6 @@ export function classifyChunkType(content: string): ChunkType {
   }
 
   // Heurística 2: Exemplo
-  // Procura por indicadores de exemplo
   const examplePatterns = [
     /^example\s+\d+/im,
     /for example/i,
@@ -57,7 +63,6 @@ export function classifyChunkType(content: string): ChunkType {
   }
 
   // Heurística 3: Referência
-  // Procura por indicadores de referência/nota
   const referencePatterns = [
     /^see also/im,
     /^note:/im,
@@ -72,13 +77,11 @@ export function classifyChunkType(content: string): ChunkType {
     return 'reference'
   }
 
-  // Padrão: Explanation (texto explicativo)
   return 'explanation'
 }
 
 /**
- * Extrai o número da página do texto (se disponível)
- * Procura por padrões como "Page 145" ou números no início
+ * Extrai o número da página do texto
  */
 export function extractPageNumber(content: string, fallback: number = 0): number {
   // Tenta extrair "Page X" ou "p. X"
@@ -92,58 +95,136 @@ export function extractPageNumber(content: string, fallback: number = 0): number
 }
 
 /**
- * Extrai o nome do capítulo do texto
- * Procura por padrões como "Chapter 5: Generics" ou "CHAPTER 5"
+ * Extrai o nome do capítulo - VERSÃO MELHORADA
  */
-export function extractChapter(content: string): string {
+export function extractChapter(content: string, pageNumber: number): string {
   // Padrão 1: "Chapter X: Title" ou "Chapter X - Title"
   const chapterMatch = content.match(/chapter\s+(\d+)\s*[:\-]\s*([^\n]+)/i)
-
   if (chapterMatch) {
-    return `Chapter ${chapterMatch[1]}: ${chapterMatch[2].trim()}`
+    const chapter = `Chapter ${chapterMatch[1]}: ${chapterMatch[2].trim()}`
+    lastKnownChapter = chapter
+    chaptersByPageRange.set(pageNumber, chapter)
+    return chapter
   }
 
-  // Padrão 2: Apenas "Chapter X"
+  // Padrão 2: "CHAPTER X" (simples)
   const simpleMatch = content.match(/chapter\s+(\d+)/i)
-
   if (simpleMatch) {
-    return `Chapter ${simpleMatch[1]}`
+    const chapter = `Chapter ${simpleMatch[1]}`
+    lastKnownChapter = chapter
+    chaptersByPageRange.set(pageNumber, chapter)
+    return chapter
   }
 
-  // Padrão 3: Título de seção maior (ALL CAPS)
-  const sectionMatch = content.match(/^([A-Z][A-Z\s]{10,})$/m)
+  // Padrão 3: Numeração tipo "1. Introduction" ou "Part I"
+  const partMatch = content.match(/^(part|section)\s+([IVX\d]+)[:\-\s]+([^\n]+)/im)
+  if (partMatch) {
+    const chapter = `${partMatch[1]} ${partMatch[2]}: ${partMatch[3].trim()}`
+    lastKnownChapter = chapter
+    chaptersByPageRange.set(pageNumber, chapter)
+    return chapter
+  }
 
-  if (sectionMatch) {
-    return sectionMatch[1].trim()
+  // Padrão 4: Título em ALL CAPS com mais de 15 caracteres
+  const capsMatch = content.match(/^([A-Z][A-Z\s]{15,})$/m)
+  if (capsMatch) {
+    const title = capsMatch[1].trim()
+    // Evita headers comuns
+    if (!title.match(/^(TABLE OF CONTENTS|INDEX|REFERENCES|BIBLIOGRAPHY|APPENDIX)/i)) {
+      const chapter = title
+      lastKnownChapter = chapter
+      chaptersByPageRange.set(pageNumber, chapter)
+      return chapter
+    }
+  }
+
+  // Padrão 5: Numeração decimal "1.1 Introduction to TypeScript"
+  const decimalMatch = content.match(/^(\d+\.\d+)\s+([^\n]+)/m)
+  if (decimalMatch && decimalMatch[2].length > 10) {
+    const chapter = `Section ${decimalMatch[1]}: ${decimalMatch[2].trim()}`
+    lastKnownChapter = chapter
+    chaptersByPageRange.set(pageNumber, chapter)
+    return chapter
+  }
+
+  // NOVO: Context Propagation - usa último capítulo conhecido se páginas próximas
+  if (lastKnownChapter) {
+    // Busca capítulo em páginas próximas (±5 páginas)
+    for (let offset = 0; offset <= 5; offset++) {
+      const nearChapter = chaptersByPageRange.get(pageNumber - offset)
+        || chaptersByPageRange.get(pageNumber + offset)
+      if (nearChapter) {
+        return nearChapter
+      }
+    }
+
+    // Se não encontrou em páginas próximas, usa último conhecido
+    return lastKnownChapter
   }
 
   return 'Unknown Chapter'
 }
 
 /**
- * Extrai seção (se houver)
- * Procura por subtítulos ou seções menores
+ * Extrai seção (se houver) - VERSÃO MELHORADA COM CONTEXT PROPAGATION
  */
-export function extractSection(content: string): string | undefined {
-  // Procura por padrões de seção/subtítulo
-  const sectionPatterns = [
-    /^##\s+(.+)$/m, // Markdown heading level 2
-    /^###\s+(.+)$/m, // Markdown heading level 3
-    /^\d+\.\d+\s+(.+)$/m, // Numeração como "5.1 Introduction"
-  ]
+export function extractSection(content: string, pageNumber: number): string | undefined {
+  // Padrão 1: Markdown headings
+  const markdownMatch = content.match(/^#{2,3}\s+(.+)$/m)
+  if (markdownMatch) {
+    const section = markdownMatch[1].trim()
+    lastKnownSection = section
+    sectionsByPageRange.set(pageNumber, section)
+    return section
+  }
 
-  for (const pattern of sectionPatterns) {
-    const match = content.match(pattern)
-    if (match) {
-      return match[1].trim()
+  // Padrão 2: Numeração decimal "5.1 Introduction"
+  const decimalMatch = content.match(/^(\d+\.\d+)\s+(.+)$/m)
+  if (decimalMatch && decimalMatch[2].length > 5) {
+    const section = `${decimalMatch[1]} ${decimalMatch[2].trim()}`
+    lastKnownSection = section
+    sectionsByPageRange.set(pageNumber, section)
+    return section
+  }
+
+  // Padrão 3: Subtítulos em negrito (detecta por CAPS inicial)
+  const subtitleMatch = content.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,4})$/m)
+  if (subtitleMatch && subtitleMatch[1].length > 10) {
+    const section = subtitleMatch[1].trim()
+    lastKnownSection = section
+    sectionsByPageRange.set(pageNumber, section)
+    return section
+  }
+
+  // Padrão 4: "Section: Title"
+  const sectionMatch = content.match(/^section[:\s]+(.+)$/im)
+  if (sectionMatch) {
+    const section = sectionMatch[1].trim()
+    lastKnownSection = section
+    sectionsByPageRange.set(pageNumber, section)
+    return section
+  }
+
+  // NOVO: Context Propagation - usa última section conhecida se páginas próximas
+  if (lastKnownSection) {
+    // Busca section em páginas próximas (±3 páginas - sections são menores que chapters)
+    for (let offset = 0; offset <= 3; offset++) {
+      const nearSection = sectionsByPageRange.get(pageNumber - offset)
+        || sectionsByPageRange.get(pageNumber + offset)
+      if (nearSection) {
+        return nearSection
+      }
     }
+
+    // Se não encontrou em páginas próximas, usa última conhecida
+    return lastKnownSection
   }
 
   return undefined
 }
 
 /**
- * Processa um chunk e retorna metadata completa
+ * Processa metadata de um chunk - VERSÃO MELHORADA
  */
 export function processChunkMetadata(
   content: string,
@@ -151,13 +232,54 @@ export function processChunkMetadata(
   totalChunks: number
 ): Omit<ChunkMetadata, 'bookTitle'> {
   // Estima página baseada no índice do chunk
-  // Assume ~620 páginas e distribui chunks uniformemente
+  // Assume ~620 páginas distribuídas uniformemente
   const estimatedPage = Math.floor((chunkIndex / totalChunks) * 620) + 1
 
+  // Extrai página do texto (se disponível)
+  const page = extractPageNumber(content, estimatedPage)
+
+  // Extrai capítulo (com context propagation)
+  const chapter = extractChapter(content, page)
+
+  // Extrai seção (com context propagation)
+  const section = extractSection(content, page)
+
+  // Classifica tipo
+  const type = classifyChunkType(content)
+
   return {
-    page: extractPageNumber(content, estimatedPage),
-    chapter: extractChapter(content),
-    section: extractSection(content),
-    type: classifyChunkType(content),
+    page,
+    chapter,
+    section,
+    type,
+  }
+}
+
+/**
+ * Reseta o contexto compartilhado
+ * Útil quando processar novo documento
+ */
+export function resetContext(): void {
+  lastKnownChapter = null
+  lastKnownSection = null
+  chaptersByPageRange.clear()
+  sectionsByPageRange.clear()
+}
+
+/**
+ * Obtém estatísticas do contexto
+ */
+export function getContextStats() {
+  return {
+    lastKnownChapter,
+    lastKnownSection,
+    chaptersDetected: chaptersByPageRange.size,
+    sectionsDetected: sectionsByPageRange.size,
+    pageRanges: Array.from(chaptersByPageRange.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([page, chapter]) => ({ page, chapter })),
+    sectionRanges: Array.from(sectionsByPageRange.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([page, section]) => ({ page, section })),
   }
 }
