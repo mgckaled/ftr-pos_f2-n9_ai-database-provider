@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "process-pdf": "tsx scripts/process-pdf.ts",
     "validate-embeddings": "tsx scripts/validate-embeddings.ts",
+    "test:search": "tsx scripts/test-simple-search.ts",
     "test:retrieval": "tsx scripts/test-retrieval.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
