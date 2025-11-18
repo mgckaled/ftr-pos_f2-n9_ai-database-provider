@@ -118,13 +118,23 @@ async function processEmbeddings(chunks: Array<{
 
   console.log(`✅ Conectado!`)
 
-  // Limpa collection antes de processar (opcional)
+  // Verifica documentos existentes (modo incremental)
   const existingCount = await collection.countDocuments()
+
   if (existingCount > 0) {
-    console.log(`\n⚠️  Collection já contém ${existingCount} documentos`)
-    console.log(`   Limpando collection...`)
-    await collection.deleteMany({})
-    console.log(`✅ Collection limpa`)
+    console.log(`\n📊 Collection já contém ${existingCount} documentos`)
+    console.log(`   Modo: INCREMENTAL (continua de onde parou)`)
+    console.log(`   Total de chunks: ${chunks.length}`)
+    console.log(`   Restantes: ${chunks.length - existingCount}`)
+
+    // Se já processou todos, não faz nada
+    if (existingCount >= chunks.length) {
+      console.log(`\n✅ Todos os chunks já foram processados!`)
+      await client.close()
+      return
+    }
+  } else {
+    console.log(`\n📊 Collection vazia - iniciando processamento completo`)
   }
 
   // Inicializa embeddings model
@@ -142,14 +152,19 @@ async function processEmbeddings(chunks: Array<{
   // Rate limiter (90 RPM com margem de segurança)
   const rateLimiter = new RateLimiter(90, 60000)
 
-  console.log(`\n⚡ Processando ${chunks.length} chunks...`)
+  // Processa apenas chunks restantes (modo incremental)
+  const chunksToProcess = chunks.slice(existingCount)
+  const totalToProcess = chunksToProcess.length
+
+  console.log(`\n⚡ Processando ${totalToProcess} chunks restantes...`)
+  console.log(`   Já processados: ${existingCount}`)
   console.log(`   Rate limit: 90 req/min (FREE tier: 100 RPM)`)
-  console.log(`   Tempo estimado: ~${Math.ceil(chunks.length / 90)} minutos\n`)
+  console.log(`   Tempo estimado: ~${Math.ceil(totalToProcess / 90)} minutos\n`)
 
   let processed = 0
   const startTime = Date.now()
 
-  for (const chunk of chunks) {
+  for (const chunk of chunksToProcess) {
     // Aguarda rate limit
     await rateLimiter.wait()
 
@@ -168,17 +183,19 @@ async function processEmbeddings(chunks: Array<{
       processed++
 
       // Log de progresso a cada 10 chunks
-      if (processed % 10 === 0 || processed === chunks.length) {
+      if (processed % 10 === 0 || processed === totalToProcess) {
         const elapsed = Math.round((Date.now() - startTime) / 1000)
         const rate = (processed / elapsed) * 60
-        const remaining = chunks.length - processed
+        const remaining = totalToProcess - processed
         const eta = remaining > 0 ? Math.round(remaining / rate) : 0
 
         const stats = rateLimiter.getStats()
 
+        const totalProcessed = existingCount + processed
+
         console.log(
-          `📊 [${processed}/${chunks.length}] ` +
-          `${((processed / chunks.length) * 100).toFixed(1)}% | ` +
+          `📊 [${totalProcessed}/${chunks.length}] ` +
+          `${((totalProcessed / chunks.length) * 100).toFixed(1)}% | ` +
           `Taxa: ${rate.toFixed(1)} req/min | ` +
           `ETA: ${eta}min | ` +
           `Restantes: ${stats.remainingRequests} req`
@@ -191,11 +208,19 @@ async function processEmbeddings(chunks: Array<{
   }
 
   const totalTime = Math.round((Date.now() - startTime) / 1000)
+  const totalProcessed = existingCount + processed
 
   console.log(`\n✅ Processamento concluído!`)
-  console.log(`   - Chunks processados: ${processed}`)
-  console.log(`   - Tempo total: ${Math.floor(totalTime / 60)}min ${totalTime % 60}s`)
+  console.log(`   - Chunks nesta sessão: ${processed}`)
+  console.log(`   - Total no banco: ${totalProcessed}/${chunks.length}`)
+  console.log(`   - Progresso: ${((totalProcessed / chunks.length) * 100).toFixed(1)}%`)
+  console.log(`   - Tempo desta sessão: ${Math.floor(totalTime / 60)}min ${totalTime % 60}s`)
   console.log(`   - Taxa média: ${((processed / totalTime) * 60).toFixed(1)} req/min`)
+
+  if (totalProcessed < chunks.length) {
+    console.log(`\n⚠️  Ainda faltam ${chunks.length - totalProcessed} chunks`)
+    console.log(`   Execute o script novamente quando o quota resetar`)
+  }
 
   await client.close()
   console.log(`\n🔌 Conexão fechada`)
