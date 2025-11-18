@@ -1,13 +1,19 @@
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { MessageSquare, Plus, X } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { MessageSquare, Plus, X, AlertCircle } from "lucide-react"
+import { useConversations } from "@/hooks"
 
 interface SidebarProps {
   isOpen: boolean
   onClose?: () => void
+  onNewChat?: () => void
 }
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, onNewChat }: SidebarProps) {
+  // TanStack Query hook para listar conversas
+  const { data, isPending, isError, error } = useConversations()
+
   return (
     <aside
       className={`
@@ -47,6 +53,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             backgroundColor: 'var(--ts-blue)',
             color: 'white'
           }}
+          onClick={onNewChat}
         >
           <Plus className="w-4 h-4 mr-2" />
           Novo Chat
@@ -61,30 +68,47 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </h2>
         </div>
 
-        {/* Example conversation items */}
-        <div className="space-y-1">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 font-normal"
-          >
-            <MessageSquare className="w-4 h-4 shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
-            <span className="text-sm truncate">Como usar generics?</span>
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 font-normal"
-          >
-            <MessageSquare className="w-4 h-4 shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
-            <span className="text-sm truncate">Diferença entre type e interface</span>
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 font-normal"
-          >
-            <MessageSquare className="w-4 h-4 shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
-            <span className="text-sm truncate">Utility types em TypeScript</span>
-          </Button>
-        </div>
+        {/* Loading state */}
+        {isPending && (
+          <div className="space-y-2 px-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        )}
+
+        {/* Error state */}
+        {isError && (
+          <div className="px-3 py-2 text-sm text-muted-foreground flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>Erro ao carregar conversas</span>
+          </div>
+        )}
+
+        {/* Conversations list */}
+        {data && data.conversations.length > 0 && (
+          <div className="space-y-1">
+            {data.conversations.map((conv) => (
+              <Button
+                key={conv.conversationId}
+                variant="ghost"
+                className="w-full justify-start gap-3 font-normal"
+              >
+                <MessageSquare className="w-4 h-4 shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
+                <span className="text-sm truncate">{conv.lastMessage}</span>
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {data && data.conversations.length === 0 && (
+          <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+            Nenhuma conversa ainda.
+            <br />
+            Comece um novo chat!
+          </div>
+        )}
       </ScrollArea>
       </div>
     </aside>
