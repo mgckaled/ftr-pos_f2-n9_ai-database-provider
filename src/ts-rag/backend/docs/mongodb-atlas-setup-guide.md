@@ -362,7 +362,7 @@ Crie `src/ts-rag/backend/scripts/test-connection.ts`:
 import { MongoClient } from 'mongodb'
 import dotenv from 'dotenv'
 
-dotenv.config()"ignoreDeprecations": "6.0"
+dotenv.config()
 
 async function testConnection() {
   const client = new MongoClient(process.env.MONGODB_URI!)

@@ -1,17 +1,44 @@
-import { MessageSquare, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { MessageSquare, Plus, X } from "lucide-react"
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean
+  onClose?: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
-    <aside className="w-64 border-r flex flex-col" style={{ borderColor: 'hsl(var(--border))', backgroundColor: 'hsl(var(--card))' }}>
-      {/* Header */}
-      <div className="p-4 border-b" style={{ borderColor: 'hsl(var(--border))' }}>
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--ts-blue)' }}>
-            <span className="text-white font-bold text-sm">TS</span>
+    <aside
+      className={`
+        h-screen border-r flex flex-col overflow-hidden
+        transition-all duration-300 ease-in-out
+        ${isOpen ? 'w-64' : 'w-0 lg:w-0'}
+      `}
+      style={{ borderColor: 'hsl(var(--border))', backgroundColor: 'hsl(var(--card))' }}
+    >
+      {/* Content wrapper with fixed width to prevent content shift */}
+      <div className="w-64 h-full flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b" style={{ borderColor: 'hsl(var(--border))' }}>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--ts-blue)' }}>
+              <span className="text-white font-bold text-sm">TS</span>
+            </div>
+            <h1 className="font-semibold text-lg">TypeScript RAG</h1>
           </div>
-          <h1 className="font-semibold text-lg">TypeScript RAG</h1>
+          {/* Close button - only visible on mobile */}
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="lg:hidden"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          )}
         </div>
 
         <Button
@@ -40,25 +67,26 @@ export function Sidebar() {
             variant="ghost"
             className="w-full justify-start gap-3 font-normal"
           >
-            <MessageSquare className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
+            <MessageSquare className="w-4 h-4 shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
             <span className="text-sm truncate">Como usar generics?</span>
           </Button>
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 font-normal"
           >
-            <MessageSquare className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
+            <MessageSquare className="w-4 h-4 shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
             <span className="text-sm truncate">Diferença entre type e interface</span>
           </Button>
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 font-normal"
           >
-            <MessageSquare className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
+            <MessageSquare className="w-4 h-4 shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
             <span className="text-sm truncate">Utility types em TypeScript</span>
           </Button>
         </div>
       </ScrollArea>
+      </div>
     </aside>
   )
 }
