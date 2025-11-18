@@ -1,0 +1,64 @@
+import { MessageSquare, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+
+export function Sidebar() {
+  return (
+    <aside className="w-64 border-r flex flex-col" style={{ borderColor: 'hsl(var(--border))', backgroundColor: 'hsl(var(--card))' }}>
+      {/* Header */}
+      <div className="p-4 border-b" style={{ borderColor: 'hsl(var(--border))' }}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--ts-blue)' }}>
+            <span className="text-white font-bold text-sm">TS</span>
+          </div>
+          <h1 className="font-semibold text-lg">TypeScript RAG</h1>
+        </div>
+
+        <Button
+          className="w-full"
+          style={{
+            backgroundColor: 'var(--ts-blue)',
+            color: 'white'
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Novo Chat
+        </Button>
+      </div>
+
+      {/* Conversations List */}
+      <ScrollArea className="flex-1 p-2">
+        <div className="mb-2">
+          <h2 className="px-3 py-2 text-xs font-semibold uppercase" style={{ color: 'hsl(var(--muted-foreground))' }}>
+            Recentes
+          </h2>
+        </div>
+
+        {/* Example conversation items */}
+        <div className="space-y-1">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 font-normal"
+          >
+            <MessageSquare className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
+            <span className="text-sm truncate">Como usar generics?</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 font-normal"
+          >
+            <MessageSquare className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
+            <span className="text-sm truncate">Diferença entre type e interface</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 font-normal"
+          >
+            <MessageSquare className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
+            <span className="text-sm truncate">Utility types em TypeScript</span>
+          </Button>
+        </div>
+      </ScrollArea>
+    </aside>
+  )
+}
