@@ -21,6 +21,7 @@ export async function chatRoutes(app: FastifyInstance) {
 
   // Initialize services
   const vectorStore = new VectorStoreService()
+  await vectorStore.initialize() // FIX: Inicializa a collection do MongoDB
   const cache = new CacheService()
   const ragService = new RAGService(vectorStore, cache)
 

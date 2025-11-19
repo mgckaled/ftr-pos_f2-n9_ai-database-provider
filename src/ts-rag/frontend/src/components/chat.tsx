@@ -1,16 +1,36 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { type Message } from "@/types/chat.types"
 import { MessageList } from "./message-list"
 import { MessageInput } from "./message-input"
-import { useSendMessage } from "@/hooks"
+import { useSendMessage, useConversationHistory } from "@/hooks"
 import { ApiError } from "@/lib/api"
+import { useConversation } from "@/contexts/conversation-context"
 
 export function Chat() {
   const [messages, setMessages] = useState<Message[]>([])
-  const [conversationId, setConversationId] = useState<string | null>(null)
+  const { conversationId, setConversationId, startNewChat } = useConversation()
 
-  // TanStack Query mutation hook
-  const { mutate: sendMessage, isPending, isError, error } = useSendMessage()
+  // TanStack Query hooks
+  const { mutate: sendMessage, isPending } = useSendMessage()
+  const { data: historyData, isLoading: isLoadingHistory } = useConversationHistory(conversationId)
+
+  // Carrega histórico quando conversationId muda
+  useEffect(() => {
+    if (conversationId && historyData) {
+      // Converte mensagens do backend para formato local
+      const loadedMessages: Message[] = historyData.messages.map((msg, index) => ({
+        id: `${conversationId}-${index}`,
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.timestamp),
+        sources: msg.sources,
+      }))
+      setMessages(loadedMessages)
+    } else if (!conversationId) {
+      // Nova conversa - limpa mensagens
+      setMessages([])
+    }
+  }, [conversationId, historyData])
 
   const handleSendMessage = (content: string) => {
     // Adiciona mensagem do usuário imediatamente (optimistic update)
@@ -56,15 +76,31 @@ export function Chat() {
           // Remove a mensagem do usuário em caso de erro
           setMessages(prev => prev.filter(m => m.id !== userMessage.id))
 
-          // Adiciona mensagem de erro
-          const errorMessage = error instanceof ApiError && error.status === 429
-            ? 'Limite de requisições atingido. Aguarde alguns segundos e tente novamente.'
-            : 'Erro ao enviar mensagem. Tente novamente.'
+          // Detecta tipo de erro e fornece mensagem apropriada
+          let errorMessage = 'Erro ao enviar mensagem. Tente novamente.'
+
+          if (error instanceof ApiError && error.status === 429) {
+            // Verifica se é erro de quota de embeddings
+            const errorData = error.data as any
+            const isEmbeddingQuota = errorData?.message?.includes('embed') ||
+                                    errorData?.message?.includes('embedding')
+
+            if (isEmbeddingQuota) {
+              errorMessage = '**Quota de Embeddings Excedida**\n\n' +
+                'O limite diário da API de embeddings do Gemini foi atingido. ' +
+                'A quota reseta à meia-noite (Horário do Pacífico - PST).\n\n' +
+                '💡 *Dica:* Para uso contínuo, considere fazer upgrade do plano no Google AI Studio.'
+            } else {
+              errorMessage = '**Limite de Requisições Atingido**\n\n' +
+                'Aguarde alguns segundos e tente novamente. ' +
+                'A API do Gemini tem limite de 10 requisições por minuto no plano gratuito.'
+            }
+          }
 
           const errorMsg: Message = {
             id: `error-${Date.now()}`,
             role: 'assistant',
-            content: `⚠️ **Erro:** ${errorMessage}`,
+            content: `⚠️ ${errorMessage}`,
             timestamp: new Date()
           }
 

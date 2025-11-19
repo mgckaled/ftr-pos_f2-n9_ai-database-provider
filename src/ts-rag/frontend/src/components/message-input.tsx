@@ -68,7 +68,7 @@ export function MessageInput({
             onClick={handleSend}
             disabled={disabled || !message.trim()}
             size="icon"
-            className="shrink-0 h-[36px] w-[36px] sm:h-[40px] sm:w-[40px] md:h-[44px] md:w-[44px]"
+            className="shrink-0 h-[36px] w-[36px] sm:h-[40px] sm:w-[40px] md:h-[44px] md:w-[44px] cursor-pointer hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
             style={{
               backgroundColor: disabled || !message.trim() ? 'hsl(var(--muted-foreground))' : 'var(--ts-blue)',
               color: 'white'

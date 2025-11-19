@@ -1,8 +1,10 @@
 import { type ReactNode, useState } from "react"
-import { Menu, PanelLeftClose, PanelLeft } from "lucide-react"
+import { Menu, PanelLeftClose, PanelLeft, MessageSquare } from "lucide-react"
 import { Sidebar } from "./sidebar"
 import { Button } from "./ui/button"
 import { ModeToggle } from "./mode-toggle"
+import { useConversation } from "@/contexts"
+import { useConversationHistory } from "@/hooks"
 
 interface LayoutProps {
   children: ReactNode
@@ -10,6 +12,14 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const { conversationId } = useConversation()
+  const { data: historyData } = useConversationHistory(conversationId)
+
+  // Pega a primeira mensagem do usuário como título da conversa
+  const conversationTitle = historyData?.messages.find(m => m.role === 'user')?.content || ''
+  const truncatedTitle = conversationTitle.length > 60
+    ? conversationTitle.slice(0, 60).trim() + '...'
+    : conversationTitle
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -39,14 +49,14 @@ export function Layout({ children }: LayoutProps) {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header - mobile and desktop */}
         <header className="flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4 sm:py-3 border-b" style={{ borderColor: 'hsl(var(--border))' }}>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {/* Toggle button - different icons for mobile/desktop */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               title={isSidebarOpen ? "Fechar sidebar" : "Abrir sidebar"}
-              className="h-9 w-9"
+              className="h-9 w-9 cursor-pointer hover:bg-accent shrink-0"
             >
               {isSidebarOpen ? (
                 <PanelLeftClose className="w-4 h-4 sm:w-5 sm:h-5 hidden lg:block" />
@@ -57,13 +67,23 @@ export function Layout({ children }: LayoutProps) {
             </Button>
 
             {/* Logo - visible when sidebar is closed on desktop */}
-            <div className={`flex items-center gap-2 transition-opacity duration-300 ${isSidebarOpen ? 'lg:opacity-0 lg:w-0 lg:overflow-hidden' : 'lg:opacity-100'}`}>
+            <div className={`flex items-center gap-2 shrink-0 transition-opacity duration-300 ${isSidebarOpen ? 'lg:opacity-0 lg:w-0 lg:overflow-hidden' : 'lg:opacity-100'}`}>
               <div className="w-6 h-6 sm:w-7 sm:h-7 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--ts-blue)' }}>
                 <span className="text-white font-bold text-[10px] sm:text-xs">TS</span>
               </div>
               <h1 className="font-semibold text-sm sm:text-base">TypeScript RAG</h1>
             </div>
           </div>
+
+          {/* Conversation Title - center */}
+          {conversationId && truncatedTitle && (
+            <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2">
+              <MessageSquare className="w-4 h-4 shrink-0 text-muted-foreground hidden sm:block" />
+              <h2 className="text-sm sm:text-base font-medium truncate text-center">
+                {truncatedTitle}
+              </h2>
+            </div>
+          )}
 
           {/* Mode Toggle no canto direito */}
           <ModeToggle />

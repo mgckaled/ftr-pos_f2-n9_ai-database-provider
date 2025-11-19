@@ -17,13 +17,12 @@ export interface Message {
 export interface Source {
   text: string
   metadata: {
-    chapter?: string
+    page: number
+    chapter: string
     section?: string
-    page?: number
-    type?: string
-    bookTitle?: string
+    type: string
+    score: number
   }
-  score?: number
 }
 
 export interface Conversation {
@@ -34,40 +33,47 @@ export interface Conversation {
   messages: Message[]
 }
 
-// API Request/Response types
+// API Request/Response types (aligned with backend Zod schemas)
 export interface ChatRequest {
-  message: string
+  question: string
   conversationId?: string
+  useCache?: boolean
+  useHybridSearch?: boolean
+  topK?: number
+  filters?: {
+    type?: 'code' | 'explanation' | 'example' | 'reference'
+    chapter?: string
+    section?: string
+  }
 }
 
 export interface ChatResponse {
-  message: Message
-  conversationId: string
+  response: string
   sources: Source[]
+  conversationId: string
+  fromCache: boolean
+  timestamp: string
 }
 
-export interface ConversationsListResponse {
+export interface ConversationsResponse {
   conversations: Array<{
-    id: string
-    title: string
+    conversationId: string
+    messageCount: number
+    lastMessage: string
     createdAt: string
     updatedAt: string
-    messageCount: number
   }>
+  total: number
 }
 
 export interface ConversationHistoryResponse {
-  conversation: {
-    id: string
-    title: string
-    createdAt: string
-    updatedAt: string
-  }
+  conversationId: string
   messages: Array<{
-    id: string
     role: MessageRole
     content: string
     timestamp: string
     sources?: Source[]
   }>
+  createdAt: string
+  updatedAt: string
 }

@@ -29,14 +29,17 @@ export type ChatRequest = z.infer<typeof chatRequestSchema>
 
 /**
  * Schema para source de resposta
+ * Estrutura retornada pelo RAGService
  */
 export const sourceSchema = z.object({
   text: z.string(),
-  chapter: z.string(),
-  section: z.string().optional(),
-  page: z.number(),
-  type: z.enum(['code', 'explanation', 'example', 'reference']),
-  score: z.number().optional(),
+  metadata: z.object({
+    page: z.number(),
+    chapter: z.string(),
+    section: z.string().optional(),
+    type: z.string(), // Tipo genérico pois vem do MongoDB
+    score: z.number(),
+  }),
 })
 
 /**
