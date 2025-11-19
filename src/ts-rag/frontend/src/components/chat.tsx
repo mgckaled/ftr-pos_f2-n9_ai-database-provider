@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { type Message } from "@/types/chat.types"
 import { MessageList } from "./message-list"
 import { MessageInput } from "./message-input"
+import { MessageSkeleton } from "./message-skeleton"
 import { useSendMessage, useConversationHistory } from "@/hooks"
 import { ApiError } from "@/lib/api"
 import { useConversation } from "@/contexts/conversation-context"
@@ -112,7 +113,9 @@ export function Chat() {
 
   return (
     <div className="flex flex-col h-full">
-      <MessageList messages={messages} />
+      <MessageList messages={messages} isLoadingResponse={isPending}>
+        {isPending && <MessageSkeleton />}
+      </MessageList>
       <MessageInput
         onSendMessage={handleSendMessage}
         disabled={isPending}
