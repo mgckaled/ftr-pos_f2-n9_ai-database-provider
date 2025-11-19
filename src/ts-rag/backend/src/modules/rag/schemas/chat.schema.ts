@@ -57,6 +57,7 @@ export type ChatResponse = z.infer<typeof chatResponseSchema>
 
 /**
  * Schema para histórico de conversa
+ * Usa preprocess para converter arrays em strings (migração de dados antigos)
  */
 export const conversationHistorySchema = z.object({
   conversationId: z.string().uuid(),
@@ -64,7 +65,13 @@ export const conversationHistorySchema = z.object({
   messages: z.array(
     z.object({
       role: z.enum(['user', 'assistant']),
-      content: z.string(),
+      content: z.preprocess((val) => {
+        // Converte array para string (migração de dados antigos)
+        if (Array.isArray(val)) {
+          return val[0] || ''
+        }
+        return val
+      }, z.string()),
       timestamp: z.string().datetime(),
       sources: z.array(sourceSchema).optional(),
     })

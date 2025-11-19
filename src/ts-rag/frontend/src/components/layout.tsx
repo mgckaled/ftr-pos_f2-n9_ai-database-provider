@@ -91,7 +91,7 @@ export function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-hidden">
           {children}
         </div>
       </main>

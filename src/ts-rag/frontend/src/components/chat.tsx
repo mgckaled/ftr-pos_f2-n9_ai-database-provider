@@ -113,20 +113,43 @@ export function Chat() {
 
   return (
     <div className="flex flex-col h-full">
-      <MessageList messages={messages} isLoadingResponse={isPending}>
-        {isPending && <MessageSkeleton />}
-      </MessageList>
-      <MessageInput
-        onSendMessage={handleSendMessage}
-        disabled={isPending}
-        placeholder={
-          isPending
-            ? "Aguardando resposta..."
-            : messages.length === 0
-            ? "Pergunte sobre TypeScript..."
-            : "Continue a conversa..."
-        }
-      />
+      {/* Empty state quando não há mensagens */}
+      {messages.length === 0 && !isPending && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4 px-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
+              Olá! Como posso ajudar?
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto">
+              Pergunte qualquer coisa sobre TypeScript e receba respostas baseadas no livro "Essential TypeScript 5"
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Message list - ocupa espaço restante */}
+      {(messages.length > 0 || isPending) && (
+        <div className="flex-1 min-h-0">
+          <MessageList messages={messages} isLoadingResponse={isPending}>
+            {isPending && <MessageSkeleton />}
+          </MessageList>
+        </div>
+      )}
+
+      {/* Input fixo no bottom */}
+      <div className="shrink-0 bg-background border-t">
+        <MessageInput
+          onSendMessage={handleSendMessage}
+          disabled={isPending}
+          placeholder={
+            isPending
+              ? "Aguardando resposta..."
+              : messages.length === 0
+              ? "Pergunte sobre TypeScript..."
+              : "Continue a conversa..."
+          }
+        />
+      </div>
     </div>
   )
 }

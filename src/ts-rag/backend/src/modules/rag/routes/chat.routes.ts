@@ -195,14 +195,23 @@ export async function chatRoutes(app: FastifyInstance) {
         .limit(20)
         .toArray()
 
-      const formatted = conversations.map((conv) => ({
-        conversationId: conv.conversationId,
-        title: conv.title,
-        messageCount: conv.messages.length,
-        lastMessage: conv.messages[conv.messages.length - 1]?.content || '',
-        createdAt: conv.createdAt,
-        updatedAt: conv.updatedAt,
-      }))
+      const formatted = conversations.map((conv) => {
+        const lastMsg = conv.messages?.[conv.messages.length - 1]
+        const lastMessageContent = typeof lastMsg?.content === 'string'
+          ? lastMsg.content
+          : Array.isArray(lastMsg?.content)
+          ? lastMsg.content[0] || ''
+          : ''
+
+        return {
+          conversationId: conv.conversationId,
+          title: conv.title,
+          messageCount: conv.messages?.length || 0,
+          lastMessage: lastMessageContent,
+          createdAt: conv.createdAt,
+          updatedAt: conv.updatedAt,
+        }
+      })
 
       return reply.send({
         conversations: formatted,
