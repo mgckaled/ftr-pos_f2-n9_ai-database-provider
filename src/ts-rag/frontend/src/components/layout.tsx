@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from "react"
-import { Menu, PanelLeftClose, PanelLeft, MessageSquare } from "lucide-react"
+import { Menu, PanelLeftClose, PanelLeft } from "lucide-react"
 import { Sidebar } from "./sidebar"
 import { Button } from "./ui/button"
 import { ModeToggle } from "./mode-toggle"
@@ -15,8 +15,10 @@ export function Layout({ children }: LayoutProps) {
   const { conversationId } = useConversation()
   const { data: historyData } = useConversationHistory(conversationId)
 
-  // Pega a primeira mensagem do usuário como título da conversa
-  const conversationTitle = historyData?.messages.find(m => m.role === 'user')?.content || ''
+  // Usa o título gerado ou pega a primeira mensagem como fallback
+  const conversationTitle = historyData?.title ||
+    historyData?.messages.find(m => m.role === 'user')?.content ||
+    ''
   const truncatedTitle = conversationTitle.length > 60
     ? conversationTitle.slice(0, 60).trim() + '...'
     : conversationTitle
@@ -77,8 +79,7 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Conversation Title - center */}
           {conversationId && truncatedTitle && (
-            <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2">
-              <MessageSquare className="w-4 h-4 shrink-0 text-muted-foreground hidden sm:block" />
+            <div className="flex-1 flex items-center justify-center min-w-0 px-2">
               <h2 className="text-sm sm:text-base font-medium truncate text-center">
                 {truncatedTitle}
               </h2>

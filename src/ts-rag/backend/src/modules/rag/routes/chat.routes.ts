@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { CacheService } from '../services/cache.service.js'
 import { RAGService } from '../services/rag.service.js'
 import { VectorStoreService } from '../services/vector-store.service.js'
+import { TitleGeneratorService } from '../services/title-generator.service.js'
 import {
   chatRequestSchema,
   chatResponseSchema,
@@ -24,6 +25,7 @@ export async function chatRoutes(app: FastifyInstance) {
   await vectorStore.initialize() // FIX: Inicializa a collection do MongoDB
   const cache = new CacheService()
   const ragService = new RAGService(vectorStore, cache)
+  const titleGenerator = new TitleGeneratorService()
 
   /**
    * POST /api/chat
@@ -59,6 +61,19 @@ export async function chatRoutes(app: FastifyInstance) {
 
       const timestamp = new Date().toISOString()
 
+      // Verifica se é uma nova conversa (primeira mensagem)
+      const existingConversation = await conversationsCollection.findOne({
+        conversationId: currentConversationId,
+      })
+      const isNewConversation = !existingConversation
+
+      // Gera título APÓS receber a resposta, usando contexto completo
+      let title: string | undefined
+      if (isNewConversation) {
+        // Passa tanto a pergunta quanto a resposta para gerar título mais preciso
+        title = await titleGenerator.generateTitle(question, result.response)
+      }
+
       await conversationsCollection.updateOne(
         { conversationId: currentConversationId },
         {
@@ -82,6 +97,7 @@ export async function chatRoutes(app: FastifyInstance) {
           $setOnInsert: {
             conversationId: currentConversationId,
             createdAt: timestamp,
+            ...(title && { title }), // Adiciona título apenas se for nova conversa
           },
           $set: {
             updatedAt: timestamp,
@@ -136,6 +152,7 @@ export async function chatRoutes(app: FastifyInstance) {
 
       return reply.send({
         conversationId: conversation.conversationId,
+        title: conversation.title,
         messages: conversation.messages,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
@@ -158,6 +175,7 @@ export async function chatRoutes(app: FastifyInstance) {
           conversations: z.array(
             z.object({
               conversationId: z.string().uuid(),
+              title: z.string().optional(),
               messageCount: z.number(),
               lastMessage: z.string(),
               createdAt: z.string().datetime(),
@@ -179,6 +197,7 @@ export async function chatRoutes(app: FastifyInstance) {
 
       const formatted = conversations.map((conv) => ({
         conversationId: conv.conversationId,
+        title: conv.title,
         messageCount: conv.messages.length,
         lastMessage: conv.messages[conv.messages.length - 1]?.content || '',
         createdAt: conv.createdAt,

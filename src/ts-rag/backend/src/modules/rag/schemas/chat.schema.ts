@@ -60,6 +60,7 @@ export type ChatResponse = z.infer<typeof chatResponseSchema>
  */
 export const conversationHistorySchema = z.object({
   conversationId: z.string().uuid(),
+  title: z.string().optional(),
   messages: z.array(
     z.object({
       role: z.enum(['user', 'assistant']),

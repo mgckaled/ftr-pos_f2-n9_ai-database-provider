@@ -58,6 +58,7 @@ export interface ChatResponse {
 export interface ConversationsResponse {
   conversations: Array<{
     conversationId: string
+    title?: string
     messageCount: number
     lastMessage: string
     createdAt: string
@@ -68,6 +69,7 @@ export interface ConversationsResponse {
 
 export interface ConversationHistoryResponse {
   conversationId: string
+  title?: string
   messages: Array<{
     role: MessageRole
     content: string
